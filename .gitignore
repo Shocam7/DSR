@@ -1,0 +1,10 @@
+.DS_Store
+**/.DS_Store
+*.zip
+dubsmash_reborn/build/
+dubsmash_reborn/.dart_tool/
+dubsmash_reborn/android/.gradle/
+dubsmash_reborn/android/local.properties
+dubsmash_reborn/gradle-8.14-bin.zip
+*.hprof
+**/*.hprof

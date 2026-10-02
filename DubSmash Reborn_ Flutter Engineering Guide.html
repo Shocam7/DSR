@@ -1,0 +1,310 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>DubSmash Reborn: Flutter Engineering Guide (Agent Playbook)</h1>
+<p><strong>Companion to the Technical Blueprint · Flutter UI + native Android engine · Android only</strong></p>
+<h2>0. How the agent uses this guide</h2>
+<ol>
+<li><strong>Always read §1 to §5 before any task.</strong> They are the rules. §6 is the work: do <strong>one milestone at a time, in order</strong>.</li>
+<li>Each milestone has <em>Tasks</em> and a <em>Gate</em>. Do not start the next milestone until every Gate item passes and is recorded in <code>PROGRESS.md</code>.</li>
+<li>Work in small PRs (one task each). Each PR must include tests, pass <code>flutter analyze</code>, and update <code>PROGRESS.md</code>.</li>
+<li><strong>Stop and ask the human</strong> before: adding a dependency, changing a schema or the Pigeon contract, changing anything that sends user data off-device, missing a performance budget by more than 20%, or making any licensing/content decision.</li>
+<li>When a requirement is unclear, write the assumption in <code>DECISIONS.md</code> and continue. Do not stall on small questions.</li>
+<li>Verify current package and API versions against official docs at M0 and pin them. Do not trust remembered versions.</li>
+</ol>
+<h2>1. Invariants (never violate)</h2>
+<ul>
+<li><strong>No video frames cross the Dart boundary.</strong> Pixels stay in native GPU memory. Dart sends commands and receives small events (≤ 2 Hz).</li>
+<li><strong>The preview never waits on network or ML.</strong> The render loop uses the latest available masks and theme.</li>
+<li><strong>Faces and raw video never leave the device.</strong> Only the scene descriptor (and an opt-in, face-excluded keyframe) may be uploaded.</li>
+<li><strong>The theme is frozen at record start</strong> and version-pinned, so export equals preview.</li>
+<li><strong>Every effect has a Tier L fallback or is disabled on Tier L.</strong> No feature ships without a degradation path.</li>
+<li><strong>Dart is the shell. Kotlin (and C++ only after profiling proves a need) is the engine.</strong></li>
+</ul>
+<h2>2. Architecture: what lives where</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Owns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dart / Flutter</strong></td>
+<td>UI, navigation, state, catalog, auth, licensing checks, networking (catalog, theme requests, SSE), downloads and cache, analytics, remote config, permissions flow, settings</td>
+</tr>
+<tr>
+<td><strong>Native engine (Kotlin), <code>dsr_engine</code> plugin</strong></td>
+<td>CameraX, EGL/GL render thread, ML inference, scene scan and descriptor, theme runtime, compositing, governor, MediaCodec recording, Oboe audio, Filament props</td>
+</tr>
+<tr>
+<td><strong>Native C++ (optional)</strong></td>
+<td>Hot loops only (mask smoothing, clean-plate median) once a profile shows Kotlin cannot meet budget</td>
+</tr>
+<tr>
+<td><strong>Backend</strong></td>
+<td>Separate repo and guide. The app talks to it through the contract in the Blueprint (§7). Use the mock server until it exists</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Preview path:</strong> CameraX → GL external texture → compositor (FBO) → blit to (a) the Flutter <code>SurfaceProducer</code> surface and (b) the MediaCodec input surface when recording. Dart shows it with a <code>Texture(textureId: ...)</code> widget. <strong>Do not use the <code>camera</code> plugin or platform views</strong> for the effects path.</p>
+<p><strong>Stack decisions (fixed unless the human changes them):</strong> Riverpod (state), go_router, Dio (HTTP), drift (local DB), freezed + json_serializable, Pigeon (typed native contract), Firebase Crashlytics + Remote Config, <code>flutter_secure_storage</code>, <code>permission_handler</code>. minSdk 26, targetSdk latest, <code>arm64-v8a</code> and <code>armeabi-v7a</code> ABIs (cheap phones are still often 32-bit; confirm with the human before dropping v7a).</p>
+<h2>3. Repository layout</h2>
+<pre><code>dubsmash_reborn/
+├── lib/
+│   ├── app/                 # bootstrap, router, theme, flavors
+│   ├── core/                # http, db, logging, errors, config, result types
+│   ├── features/
+│   │   ├── auth/  catalog/  record/  edit/  feed/  share/  settings/
+│   │   └── &lt;feature&gt;/{data,domain,presentation}/
+│   └── engine/              # Dart facade over dsr_engine (the ONLY place that calls it)
+├── packages/
+│   └── dsr_engine/          # local plugin
+│       ├── pigeons/engine.dart
+│       ├── lib/             # generated Dart + thin wrappers
+│       └── android/src/main/kotlin/.../
+│           ├── camera/  gl/  ml/  scene/  theme/  governor/  record/  audio/  props/
+│           └── EnginePlugin.kt
+├── tool/mock_server/        # fake catalog + theme service (SSE) for dev and CI
+├── test/  integration_test/
+├── assets/models/           # .tflite (noCompress), with checksums.json
+├── docs/ (blueprint, this guide)  PROGRESS.md  DECISIONS.md
+└── .github/workflows/
+</code></pre>
+<p>Dart code depends on an <code>EngineApi</code> <strong>interface</strong> in <code>lib/engine/</code>. Production uses the Pigeon-backed implementation, and tests use <code>FakeEngineApi</code>. This lets the whole UI be built and tested without native code.</p>
+<h2>4. Native ↔ Dart contract</h2>
+<p><strong>Texture.</strong> <code>createSession</code> returns a <code>textureId</code> from <code>TextureRegistry.createSurfaceProducer()</code>. Native must handle the producer's surface-created and surface-destroyed callbacks by recreating the EGL window surface. Dart wraps the <code>Texture</code> in an <code>AspectRatio</code> and never rebuilds it per frame.</p>
+<p><strong>Commands (Pigeon <code>@HostApi</code>)</strong>, sketch:</p>
+<pre><code class="language-dart">@HostApi()
+abstract class EngineHostApi {
+  @async SessionInfo createSession(SessionConfig c);       // textureId, previewSize, tier
+  @async void startPreview(int sessionId);
+  void stopPreview(int sessionId);
+  void startScan(int sessionId);
+  @async String finishScan(int sessionId);                  // descriptor JSON (&lt;50 KB)
+  void applyTheme(int sessionId, String themeDir, ThemeStage stage, int crossfadeMs);
+  void setTierOverride(int sessionId, Tier? tier);          // debug and A/B
+  @async void startRecording(int sessionId, RecordingConfig c);
+  @async RecordingResult stopRecording(int sessionId);      // file path, duration, theme_id
+  void disposeSession(int sessionId);
+}
+
+@FlutterApi()
+abstract class EngineFlutterApi {
+  void onStats(FrameStats s);      // ≤ 1 Hz: fps, ml ms, tier, thermal
+  void onEvent(EngineEvent e);     // scanProgress, tierChanged, themeStageReady, error
+}
+</code></pre>
+<p><strong>Rules:</strong> payloads are small and typed, errors use typed <code>EngineError</code> codes (never raw exception strings), every call is idempotent where possible, and <code>disposeSession</code> must release camera, GL, codecs and models within 500 ms.</p>
+<p><strong>Theme handoff.</strong> Dart downloads and verifies theme bundles (checksum, signature), writes them to app storage, and passes a directory path to native. Native reads the manifest (schema v1) and never touches the network.</p>
+<h2>5. Tooling and commands</h2>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Static analysis</td>
+<td><code>flutter analyze</code> (strict lints; zero warnings allowed)</td>
+</tr>
+<tr>
+<td>Dart/widget tests</td>
+<td><code>flutter test</code></td>
+</tr>
+<tr>
+<td>Generate code</td>
+<td><code>dart run build_runner build -d</code> and <code>dart run pigeon --input packages/dsr_engine/pigeons/engine.dart</code></td>
+</tr>
+<tr>
+<td>Native unit tests</td>
+<td><code>cd android &amp;&amp; ./gradlew :dsr_engine:testDebugUnitTest</code></td>
+</tr>
+<tr>
+<td>Integration tests (device)</td>
+<td><code>flutter test integration_test -d &lt;deviceId&gt;</code></td>
+</tr>
+<tr>
+<td>Build</td>
+<td><code>flutter build apk --flavor dev --dart-define-from-file=env/dev.json</code></td>
+</tr>
+<tr>
+<td>Frame/mem profiling</td>
+<td><code>adb shell dumpsys gfxinfo &lt;pkg&gt; framestats</code>, <code>dumpsys meminfo &lt;pkg&gt;</code>, Perfetto traces</td>
+</tr>
+</tbody>
+</table>
+<p>Flavors: <code>dev</code> (mock server, debug HUD on), <code>staging</code>, <code>prod</code>. CI runs analyze, Dart tests, native unit tests, and builds the APK on every PR. Instrumented tests run on the device lab or Firebase Test Lab nightly.</p>
+<p><strong>Reference devices</strong> (the human supplies exact models at M0): <strong>L</strong> (2 GB RAM, Helio G35 / Unisoc class), <strong>M</strong> (Snapdragon 6xx / Dimensity 700 class), <strong>H</strong> (current flagship). All Gates are measured on L and M at minimum.</p>
+<h2>6. Milestones</h2>
+<h3>M0: Bootstrap and guardrails</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Create the Flutter project, flavors, strict <code>analysis_options.yaml</code>, folder layout (§3), CI workflow, <code>PROGRESS.md</code>, <code>DECISIONS.md</code>.</li>
+<li>Create the <code>dsr_engine</code> plugin with Pigeon codegen and the Dart <code>EngineApi</code> interface plus <code>FakeEngineApi</code>.</li>
+<li>Build <code>tool/mock_server</code> (catalog list, track download, <code>/theme</code> SSE that streams stages with canned bundles).</li>
+<li>&quot;Hello texture&quot;: native renders an animated GL color into a <code>SurfaceProducer</code>, shown by a Flutter <code>Texture</code>.</li>
+</ul>
+<p><strong>Gate:</strong> CI green; APK installs on L and M; hello texture runs at 30+ fps and survives rotate, background/foreground, and 20 session create/dispose cycles with no native memory growth.</p>
+<h3>M1: Camera → GL → Flutter</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>CameraX with a plugin-owned <code>LifecycleOwner</code> driven by Activity callbacks, front/back switch, orientation, zoom/tap-focus later.</li>
+<li>Camera frames to an external OES texture, then the compositor FBO (passthrough shader), then the producer surface. Own the EGL context and render thread.</li>
+<li>Dart permission flow (camera, mic), <code>RecordScreen</code> showing the preview, debug HUD (fps, frame ms) from <code>onStats</code>.</li>
+</ul>
+<p><strong>Gate:</strong> preview matches device camera fps on L and M; no leaks after 30 min; correct behavior on pause/resume, permission denial, surface loss; Flutter UI stays at 60 fps with the preview running.</p>
+<h3>M2: Recording and audio core</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Second EGL window surface from <code>MediaCodec</code> (H.264, HEVC optional), 1080p30 with fallback to 720p on Tier L.</li>
+<li>Audio via Oboe: track playback, mic capture, headphone detection, AEC in speaker mode, mixer, <code>MediaMuxer</code>.</li>
+<li>One-time latency calibration screen, with offset stored per device and applied at mux.</li>
+<li>Dart: record/stop, countdown, trim, local library (drift).</li>
+</ul>
+<p><strong>Gate:</strong> a 60 s recording plays back correctly on L and M; A/V offset ≤ 40 ms after calibration; no dropped-frame spikes above 5% during encode; recorded file opens in the system gallery.</p>
+<h3>M3: Person segmentation and basic compositing</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>ML module: model loader with checksum check, delegate chooser (NPU → GPU → XNNPACK) with a first-launch micro-benchmark cached per model.</li>
+<li>Person mask (MediaPipe) every 1 to 2 frames on the ML thread; &quot;latest result&quot; buffer; temporal smoothing and edge-aware upsample in a shader.</li>
+<li>Shader effects driven by the mask: background color/blur. Governor skeleton (rolling frame time, thermal status).</li>
+</ul>
+<p><strong>Gate:</strong> mask p95 latency and IoU on the golden scene set meet targets recorded in <code>PROGRESS.md</code> (set the baseline here); edge flicker score below threshold; render fps unaffected by ML load.</p>
+<h3>M4: Scene segmentation and theme runtime</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Scene segmentation (wall/floor/ceiling/window/furniture), tiered resolution and cadence.</li>
+<li>Theme Runtime: parse manifest schema v1, load KTX2/ASTC textures, tile onto masks, lighting transfer (<code>lum(frame)/mean_lum(region)</code>), crossfade between themes, memory budget per tier.</li>
+<li>Bundled &quot;base look&quot; pack and two hand-authored test themes. Tier L / M / H config table loaded from Remote Config with a bundled default.</li>
+<li>Full governor: degradation order (depth → props → mask res/cadence → particles → tier) with hysteresis.</li>
+</ul>
+<p><strong>Gate:</strong> a retextured wall holds ≥ 24 fps on L and ≥ 30 fps on M; lighting visibly preserved across 3 test rooms; governor downgrades and recovers correctly under a forced-load test.</p>
+<h3>M5: App shell and catalog (Dart; may run parallel to M3 and M4)</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Auth, catalog browse/search, track detail, download manager with resume, Universe Pack parsing (style bible metadata, base look, cue track, rights record).</li>
+<li>Licensing client: territory and expiry checks, kill-switch honored from Remote Config.</li>
+<li>Feed/share screens, edit screen, settings (privacy mode, keyframe consent, quality override).</li>
+</ul>
+<p><strong>Gate:</strong> widget and integration tests pass against mock server; expired or out-of-territory tracks are blocked in the UI; offline launch works with cached catalog.</p>
+<h3>M6: Scan, descriptor and server theming</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Guided scan UX (Dart) driving native <code>startScan</code>; native builds the descriptor (class areas, objects if M7 is done, palette, lighting) and a clean plate.</li>
+<li>Descriptor upload (Dio), SSE client for staged results, bundle download with checksum and signature check, theme cache (LRU), crossfade apply.</li>
+<li>Fallbacks: timeout, offline, server error all keep the base look. Seed and theme-version pinned per session.</li>
+</ul>
+<p><strong>Gate:</strong> end-to-end against the mock server, then the real server; first themed look ≤ 1 s, personalized p50 ≤ 8 s on the lab network; no preview stutter during download/apply; privacy mode sends no keyframe.</p>
+<h3>M7: Object swaps (Tier M/H)</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Object detection (instances) every N frames plus optical-flow tracking; class → asset mapping from the theme.</li>
+<li>Fill original pixels from the clean plate, then render the replacement via Filament into an offscreen texture composited at the tracked box with depth ordering.</li>
+<li>Per-tier cap on number of props; asset loading off the render thread.</li>
+</ul>
+<p><strong>Gate:</strong> bottle→goblet style swap stays locked to the object while the camera is still; no halo of the original object; frame-rate budgets still hold on M.</p>
+<h3>M8: Atmosphere, cue-sync and relight</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Color-grade LUT, fog, GPU particles (embers/snow/dust), window/sky replacement.</li>
+<li>Cue track playback: beat grid and line timestamps drive effect triggers; person relight (tint and rim light) from the theme.</li>
+</ul>
+<p><strong>Gate:</strong> effects sync to the audio within ±1 frame at 30 fps on a test track; all effects respect governor downgrades.</p>
+<h3>M9: Depth, ARCore (optional) and Studio render</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>ARCore plane and depth when the device supports it, behind a capability check, with a segmentation-only fallback.</li>
+<li>Studio render: upload masks and theme reference for a server-side high-quality re-render (premium). Gate behind a feature flag.</li>
+</ul>
+<p><strong>Gate:</strong> devices without ARCore behave identically to M8; flag off by default.</p>
+<h3>M10: Hardening and release</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>60 min soak tests on L, M, H; thermal tests; low-memory kill and restore; Crashlytics wired with engine breadcrumbs.</li>
+<li>Play readiness: Data Safety form matches actual data flows, privacy policy, age gate, consent copy, target API compliance, 16 KB page-size support for all native libraries (verify current Play requirements), App Bundle size and model delivery plan.</li>
+<li>Staged rollout plan with remote kill switches per universe and per effect.</li>
+</ul>
+<p><strong>Gate:</strong> crash-free ≥ 99.5% in beta; all budgets in §7 met on L and M; security and privacy checklist signed off by the human.</p>
+<h2>7. Cross-cutting standards</h2>
+<p><strong>Performance budgets</strong> (targets; revise after the M1 baseline and record changes in <code>DECISIONS.md</code>)</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Tier L</th>
+<th>Tier M/H</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Preview fps</td>
+<td>≥ 24</td>
+<td>≥ 30</td>
+</tr>
+<tr>
+<td>GL render time per frame</td>
+<td>≤ 14 ms</td>
+<td>≤ 12 ms</td>
+</tr>
+<tr>
+<td>Flutter UI frame (build + raster)</td>
+<td>≤ 8 ms</td>
+<td>≤ 8 ms</td>
+</tr>
+<tr>
+<td>App memory (PSS) while recording</td>
+<td>≤ 350 MB</td>
+<td>≤ 600 MB</td>
+</tr>
+<tr>
+<td>Theme bundle on disk</td>
+<td>≤ 8 MB</td>
+<td>≤ 25 MB</td>
+</tr>
+<tr>
+<td>Cold start to camera</td>
+<td>≤ 2.5 s</td>
+<td>≤ 1.5 s</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Testing pyramid</strong></p>
+<ul>
+<li><em>Dart:</em> unit tests for domain logic; widget tests with <code>FakeEngineApi</code>; golden tests for key screens; integration tests against the mock server.</li>
+<li><em>Kotlin:</em> JUnit for descriptor builder, governor, theme manifest parser, cue scheduler (pure logic, no GL).</li>
+<li><em>On-device:</em> instrumented tests for lifecycle (create/dispose loops), and a <strong>benchmark harness</strong> that runs a recorded clip through the pipeline and writes frame times and mask metrics to JSON for CI comparison.</li>
+<li><em>Quality set:</em> a golden scene dataset (varied rooms, lighting, skin tones, clutter). Mask IoU and flicker score gate regressions.</li>
+</ul>
+<p><strong>Telemetry</strong> (privacy-safe, no images): time to first/final theme, fps p50/p5, tier and downgrades, thermal events, crash breadcrumbs, delegate chosen, cache hit, export success.</p>
+<p><strong>Errors:</strong> a typed <code>EngineError</code> enum (permission, cameraBusy, surfaceLost, modelLoadFailed, delegateFailed, encoderFailed, themeInvalid, oom). The UI maps each to a recoverable message. Native never crashes the app for a failed effect. It disables the effect and reports.</p>
+<p><strong>Security:</strong> signed theme and model bundles, checksum verify before load, TLS with pinning, signed CDN URLs, tokens in secure storage, no secrets in the repo (use <code>--dart-define-from-file</code>).</p>
+<p><strong>Code standards:</strong> feature-first folders, immutable state (freezed), no business logic in widgets, no <code>print</code> (use the logger), every public Dart API documented, every native class has a single owner thread documented in its header comment.</p>
+<h2>8. Known Flutter + Android pitfalls</h2>
+<ul>
+<li><strong>Surface lifecycle:</strong> the Flutter texture surface can be destroyed and recreated (app background, config change). Recreate the EGL window surface, never the whole session.</li>
+<li><strong>EGL context loss</strong> after backgrounding on some devices: detect, rebuild textures and shaders from cached sources.</li>
+<li><strong>Hot reload does not restart native code.</strong> After native changes, do a full restart. Agents must not assume a Dart hot reload applied them.</li>
+<li><strong>Competing for the GPU:</strong> on Tier L, Flutter's own rendering competes with the effects pipeline. Avoid <code>BackdropFilter</code>, large blurs and heavy animations over the preview. Use <code>RepaintBoundary</code> and <code>const</code> widgets for overlays.</li>
+<li><strong>Model files:</strong> set <code>noCompress</code> for <code>.tflite</code> in Gradle, or loading is slow and memory-heavy.</li>
+<li><strong>Channel traffic:</strong> never send per-frame data. Batch stats to ≤ 1 Hz.</li>
+<li><strong>Delegates:</strong> GPU delegates can be slower than CPU or fail on specific chips. Trust the micro-benchmark, not assumptions, and cache the result per device and model version.</li>
+<li><strong>Thermal and battery:</strong> long recordings throttle. The governor must react before the OS does.</li>
+<li><strong>Permissions:</strong> handle &quot;denied&quot;, &quot;denied forever&quot; and &quot;revoked while running&quot; paths. Test each.</li>
+<li><strong>Audio focus and Bluetooth:</strong> headset connect/disconnect mid-session changes latency. Re-run offset logic and warn the user.</li>
+</ul>
+<h2>9. Templates</h2>
+<p><strong><code>PROGRESS.md</code> entry</strong></p>
+<pre><code>## M4 · Task: Theme manifest parser          [done | in-progress | blocked]
+- PR: #42   Date: YYYY-MM-DD
+- What changed: …
+- Gate items affected: [x] schema v1 parsing  [ ] tier memory budget
+- Measurements (device, fps, ms, MB): …
+- Open questions / assumptions: …
+</code></pre>
+<p><strong><code>DECISIONS.md</code> entry:</strong> <code>ID · date · decision · alternatives considered · reason · who approved</code>.</p>
+<p><strong>PR checklist:</strong> analyze clean · tests added and passing · Gate impact noted · performance measured on L and M for render-path changes · no new dependency without approval · no new user-data flow without approval · docs and <code>PROGRESS.md</code> updated.</p>
+
+</body></html>

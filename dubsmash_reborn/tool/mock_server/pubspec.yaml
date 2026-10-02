@@ -1,0 +1,5 @@
+name: mock_server
+description: DubSmash Reborn development & CI mock server
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"

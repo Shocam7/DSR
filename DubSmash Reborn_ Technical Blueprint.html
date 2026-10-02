@@ -1,0 +1,505 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>DubSmash Reborn: Technical Blueprint</h1>
+<p><strong>Version 1.0 · Android-first · For engineering, product and legal</strong></p>
+<h2>1. Vision and success criteria</h2>
+<p>Users dub songs and dialogues, and the app rebuilds their real room as the cinematic universe the audio comes from. Each user gets a different variant (one gets Harrenhal, another Winterfell) fitted to their own space.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>First themed preview after scan</td>
+<td>≤ 1 s (bundled base look)</td>
+</tr>
+<tr>
+<td>Personalized look (p50 / p95)</td>
+<td>≤ 8 s / ≤ 15 s</td>
+</tr>
+<tr>
+<td>Preview frame rate</td>
+<td>≥ 24 fps low tier, ≥ 30 fps mid/high</td>
+</tr>
+<tr>
+<td>Device coverage</td>
+<td>Tier L runs on ~all Android 8+ phones with a GLES 3.0 GPU</td>
+</tr>
+<tr>
+<td>Export fidelity</td>
+<td>Exported video matches what the user saw</td>
+</tr>
+<tr>
+<td>Crash-free sessions</td>
+<td>≥ 99.5%</td>
+</tr>
+<tr>
+<td>Blended generation cost</td>
+<td>&lt; $0.02 per session (target, validate in beta)</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Design principles</h2>
+<ol>
+<li><strong>The preview never waits on the network or on ML.</strong> The render loop runs at full rate using the latest available masks and theme.</li>
+<li><strong>Faces and raw video stay on the device.</strong> Only a compact scene descriptor (and optionally one face-excluded keyframe) is uploaded.</li>
+<li><strong>Compose before you generate.</strong> Pooled, pre-generated assets cover most requests. Fresh generation is the exception.</li>
+<li><strong>Degrade gracefully.</strong> Three quality tiers and a frame-time governor.</li>
+<li><strong>Deterministic per session.</strong> Seeds and theme versions are pinned, so the same wall stays the same across frames and in the export.</li>
+<li><strong>Rights first.</strong> Every universe is gated by a license record or switched to a generic &quot;inspired-by&quot; mode.</li>
+</ol>
+<h2>3. System architecture</h2>
+<pre><code>┌────────────────────────── ANDROID CLIENT ──────────────────────────┐
+│ CameraX ─► GL texture ─► Perception (ML thread) ─► Scene Descriptor│
+│    │                         │ masks, boxes, depth        │        │
+│    ▼                         ▼                            ▼        │
+│ GL Compositor ◄── Theme Runtime ◄── Theme Cache     Upload (async)│
+│    │   (surfaces, props, atmosphere, relight)          ▲           │
+│    ▼                                                   │           │
+│ Preview + MediaCodec encoder ◄── Dub Engine (audio)    │           │
+└────────────────────────────────────────────────────────┼───────────┘
+                                                         │ HTTPS + SSE
+┌──────────────────────────── BACKEND ───────────────────┼───────────┐
+│ API Gateway ─► Theme Service ─► Variant Selector ─► Planner (LLM) │
+│                     │                                    │         │
+│                     ▼                                    ▼         │
+│              Asset Resolver ◄─► Vector DB (pools)   Generator GPUs │
+│                     │                                    │         │
+│                     └──► Moderation ─► Packager ─► Object Store/CDN│
+│ Licensing/Catalog service · Analytics · Remote config (tier tables)│
+└────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2>4. Android client</h2>
+<h3>4.1 Threads and frame flow</h3>
+<ul>
+<li><strong>Camera thread:</strong> CameraX <code>Preview</code> into a <code>SurfaceTexture</code> bound to an EGL external texture (zero-copy to the GPU). A separate <code>ImageAnalysis</code> stream at 256 to 320 px feeds the ML thread.</li>
+<li><strong>ML thread:</strong> runs models on a schedule (table below), publishes masks to a lock-free &quot;latest result&quot; buffer, and never blocks rendering.</li>
+<li><strong>GL render thread:</strong> draws every vsync using the latest masks and theme. Compositing is done in shaders only.</li>
+<li><strong>I/O thread:</strong> descriptor upload, theme download, cache.</li>
+</ul>
+<p>Handheld camera motion is handled with cheap feature-based homography or ARCore pose when available. Version 1 optimizes for the common case of a propped-up phone.</p>
+<h3>4.2 Perception models</h3>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Model (starting point)</th>
+<th>Input</th>
+<th>Cadence</th>
+<th>Tier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Person mask</td>
+<td>MediaPipe selfie segmentation or custom lightweight net</td>
+<td>256 px</td>
+<td>every 1 to 2 frames</td>
+<td>L, M, H</td>
+</tr>
+<tr>
+<td>Scene segmentation (wall, floor, ceiling, window, furniture)</td>
+<td>SegFormer-B0 or DeepLab-MobileNet, fine-tuned to ~12 classes</td>
+<td>160 / 256 / 320 px</td>
+<td>every 4 / 3 / 2 frames</td>
+<td>L, M, H</td>
+</tr>
+<tr>
+<td>Object instances (bottle, cup, chair, lamp, books, plants)</td>
+<td>YOLO11n-seg or EfficientDet-Lite + optical-flow tracker</td>
+<td>320 px</td>
+<td>every 5 frames, tracked between</td>
+<td>M, H</td>
+</tr>
+<tr>
+<td>Face landmarks (for lip-sync scoring and face-aware relight)</td>
+<td>MediaPipe Face Landmarker</td>
+<td>face crop</td>
+<td>every frame</td>
+<td>M, H</td>
+</tr>
+<tr>
+<td>Depth</td>
+<td>ARCore Depth where supported, else Depth Anything V2 Small</td>
+<td>256 px</td>
+<td>2 to 5 fps</td>
+<td>H</td>
+</tr>
+<tr>
+<td>Lighting estimate</td>
+<td>Spherical harmonics from scan frames</td>
+<td>64 px</td>
+<td>once, refreshed every ~5 s</td>
+<td>L, M, H</td>
+</tr>
+</tbody>
+</table>
+<p>Runtime: LiteRT with INT8 models. Delegate order is NNAPI/NPU, then GPU, then XNNPACK CPU. A first-launch micro-benchmark picks the fastest working delegate per model, because some GPU drivers are slower or buggier than CPU.</p>
+<p>All masks are smoothed temporally (exponential moving average plus edge-aware upsampling) to stop edge shimmer. Mask quality and flicker are where most tuning time will go.</p>
+<h3>4.3 Compositing stack (draw order)</h3>
+<ol>
+<li><strong>Camera frame</strong> (base).</li>
+<li><strong>Surface retexturing.</strong> Wall, floor and ceiling masks get tiled PBR textures. Lighting is preserved by multiplying the texture by <code>lum(frame) / mean_lum(region)</code>, so real shadows and gradients carry through. Perspective comes from ARCore planes when available, otherwise from vanishing-line estimation on the wall mask.</li>
+<li><strong>Prop replacement.</strong> Fill the original object's pixels from a <strong>clean plate</strong> (a temporal median of the scan frames with the person masked out), then render the replacement (bottle → goblet) with Filament into an offscreen texture at the object's tracked box, scale and a depth-ordered position.</li>
+<li><strong>Atmosphere.</strong> Fog, dust, embers, snow (GPU particles), a color-grade LUT, and window/sky replacement using the window mask.</li>
+<li><strong>Person layer.</strong> Original pixels via the person mask, with a subtle theme relight (color tint, rim light) so the user looks like they belong.</li>
+<li><strong>UI and captions.</strong></li>
+</ol>
+<h3>4.4 Scene descriptor (what leaves the device)</h3>
+<p>Built during a 2 to 3 second guided scan (&quot;Slowly show us your room&quot;). It contains class-area percentages, object list with normalized boxes, dominant palette, lighting estimate, room-layout hints, and device tier. Its size is under 50 KB. An optional keyframe (≤ 512 px) is sent only with consent, and the person mask is applied first so no one is in it.</p>
+<h3>4.5 Tiers and frame-time governor</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Tier L</th>
+<th>Tier M</th>
+<th>Tier H</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scene seg</td>
+<td>160 px, every 4th frame</td>
+<td>256 px, every 3rd</td>
+<td>320 px, every 2nd</td>
+</tr>
+<tr>
+<td>Object swap</td>
+<td>off</td>
+<td>on (≤ 3 props)</td>
+<td>on (≤ 8 props)</td>
+</tr>
+<tr>
+<td>Depth / ARCore</td>
+<td>off</td>
+<td>optional</td>
+<td>on</td>
+</tr>
+<tr>
+<td>Theme textures</td>
+<td>512² ASTC/ETC2, ≤ 8 MB</td>
+<td>1024², ≤ 16 MB</td>
+<td>1024² + normal maps, ≤ 25 MB</td>
+</tr>
+<tr>
+<td>Particles / 3D</td>
+<td>minimal</td>
+<td>moderate</td>
+<td>full</td>
+</tr>
+</tbody>
+</table>
+<p>Tier is chosen from a device-model lookup (remote config) plus the first-launch benchmark. The <strong>governor</strong> watches rolling frame time, thermal state (<code>PowerManager</code> thermal status) and battery. When over budget, it drops in this order: depth, then object swaps, then mask resolution and cadence, then particles, and finally tier. It recovers gradually when headroom returns.</p>
+<h3>4.6 Dub engine (audio)</h3>
+<ul>
+<li><strong>Playback and capture:</strong> Oboe (AAudio) for low-latency output and mic input, with echo cancellation. Users on headphones get clean voice. Speaker mode uses AEC.</li>
+<li><strong>Latency calibration:</strong> measure round-trip once per device and shift the voice track so lips and audio align in the export.</li>
+<li><strong>Cue track:</strong> each licensed audio item ships with a beat grid, lyric/dialogue timestamps and scene cues. The theme runtime uses them to sync effects (lightning on a drum hit, torchlight flicker in the rhythm, a &quot;scene change&quot; at a chorus).</li>
+<li><strong>Lip-sync scoring (optional game layer):</strong> mouth-open curve from face landmarks compared against the audio envelope.</li>
+<li><strong>Modes:</strong> lip-sync to original audio, voice-over dub, and duet/remix edits.</li>
+</ul>
+<h3>4.7 Recording and export</h3>
+<ul>
+<li>The final composited frame renders into a <code>MediaCodec</code> input surface (H.264/HEVC) alongside the preview. Audio is mixed (track + optional voice) and muxed with <code>MediaMuxer</code>.</li>
+<li>The theme is <strong>frozen and version-pinned</strong> when recording starts, so the export is identical to the preview.</li>
+<li><strong>Post-process options:</strong> trim, captions and stickers via Media3 Transformer. A premium &quot;Studio render&quot; re-renders the clip server-side at higher quality, using the stored masks and theme.</li>
+</ul>
+<h2>5. The Universe system (audio → world)</h2>
+<p>Every catalog item (song or dialogue clip) links to one or more <strong>Universe Packs</strong>. A pack is the unit of content and licensing:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Style bible</td>
+<td>Palette, materials, architecture motifs, lighting mood, props, forbidden elements</td>
+</tr>
+<tr>
+<td>Variants</td>
+<td>Locations within the universe (Harrenhal, Winterfell, ...), each with an embedding and scene-fit tags (indoor/outdoor, size, brightness, clutter)</td>
+</tr>
+<tr>
+<td>Base look</td>
+<td>Bundled with the track download: LUT, fog settings, 3 low-res textures, ambient loop. This is the instant first look</td>
+</tr>
+<tr>
+<td>Prompt templates</td>
+<td>Per surface and per prop, with negative prompts</td>
+</tr>
+<tr>
+<td>Asset pools</td>
+<td>Pre-generated textures and <code>.glb</code> props, tagged and embedded</td>
+</tr>
+<tr>
+<td>Cue track</td>
+<td>Beat grid, line timestamps, scene cues</td>
+</tr>
+<tr>
+<td>Rights record</td>
+<td>License ID, territories, expiry, allowed mode (<code>licensed</code> or <code>inspired</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variant selection.</strong> Score each variant as <code>fit(scene, variant) + novelty(user history) + exploration</code>, then sample with a <strong>seeded softmax</strong>. Variants stay sensible (a windowless room tends toward a dungeon, a bright room with windows toward a great hall) while different users still land on different worlds. The seed is stored per session.</p>
+<h2>6. Backend</h2>
+<h3>6.1 Services</h3>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API Gateway</td>
+<td>Auth, rate limits, per-tier queueing</td>
+</tr>
+<tr>
+<td>Catalog and Licensing</td>
+<td>Tracks, universes, rights records, territory checks, kill switches</td>
+</tr>
+<tr>
+<td>Theme Service</td>
+<td>Orchestrates a request end to end, streams results to the client over SSE</td>
+</tr>
+<tr>
+<td>Variant Selector</td>
+<td>Embedding search plus seeded sampling</td>
+</tr>
+<tr>
+<td>Planner</td>
+<td>LLM with JSON-schema-constrained output. Produces the theme spec. A 2.5 s timeout falls back to a deterministic rule planner using the top pooled variant</td>
+</tr>
+<tr>
+<td>Asset Resolver</td>
+<td>Vector search over pools (pgvector or similar)</td>
+</tr>
+<tr>
+<td>Generator workers</td>
+<td>GPU autoscaling pool</td>
+</tr>
+<tr>
+<td>Moderation</td>
+<td>Input and output safety checks</td>
+</tr>
+<tr>
+<td>Packager</td>
+<td>Compression and bundling, pushed to CDN</td>
+</tr>
+</tbody>
+</table>
+<h3>6.2 Request lifecycle</h3>
+<ol>
+<li>Client posts the descriptor (and optional keyframe) with a track ID and seed.</li>
+<li>Catalog checks the license and territory, then returns the universe and variants.</li>
+<li>Variant Selector picks the variant. The Planner writes the spec (surface looks, prop mappings, lighting, atmosphere, ambience).</li>
+<li>The Asset Resolver matches each item against the pools. <strong>Pool hits</strong> return immediately. <strong>Misses</strong> go to the generator queue.</li>
+<li>Results stream in stages: spec and pooled textures first (target ≤ 3 s after upload), then generated textures, then props as each finishes.</li>
+</ol>
+<h3>6.3 Generation pipeline</h3>
+<ul>
+<li><strong>Textures:</strong> few-step distilled diffusion with circular padding for seamless tiling, then upscale, then derive normal and roughness maps. Auto-QA covers seam score, style match against the style bible, and a safety classifier. Passing textures enter the pool, so the pool grows with use. Target depth is 200+ per (variant, surface).</li>
+<li><strong>3D props:</strong> a curated <code>.glb</code> library (≤ 20k triangles, one material, 512² textures, meshopt-compressed). Hero props can use image-to-3D models in the background (10 to 60+ s). They enter the pool only after QA.</li>
+<li><strong>Packaging:</strong> KTX2 textures (ASTC/ETC2), meshopt <code>.glb</code>, manifest, signed CDN URLs.</li>
+</ul>
+<h3>6.4 Infrastructure</h3>
+<p>Kubernetes, with Redis Streams or SQS for queues, Postgres plus pgvector, object storage plus CDN, GPU node pools autoscaled on queue depth, and remote config and feature flags for tier tables and universe kill switches. Cache key: <code>(universe, variant, scene_cluster, tier)</code>. When the GPU queue is long, serve a pooled bundle rather than make the user wait.</p>
+<h2>7. Data contracts</h2>
+<p><strong>Scene descriptor (client → server)</strong></p>
+<pre><code class="language-json">{
+  &#34;schema&#34;: 1,
+  &#34;track_id&#34;: &#34;trk_8841&#34;,
+  &#34;seed&#34;: 482913,
+  &#34;tier&#34;: &#34;M&#34;,
+  &#34;scene&#34;: {
+    &#34;surfaces&#34;: {&#34;wall&#34;: 0.41, &#34;floor&#34;: 0.22, &#34;ceiling&#34;: 0.12, &#34;window&#34;: 0.05},
+    &#34;objects&#34;: [{&#34;cls&#34;: &#34;bottle&#34;, &#34;box&#34;: [0.62, 0.40, 0.08, 0.20], &#34;conf&#34;: 0.91}],
+    &#34;palette&#34;: [&#34;#c9b79c&#34;, &#34;#4a3f35&#34;],
+    &#34;lighting&#34;: {&#34;dir&#34;: [0.3, -0.8, 0.5], &#34;warmth&#34;: 0.62, &#34;intensity&#34;: 0.7},
+    &#34;layout&#34;: {&#34;room_size&#34;: &#34;small&#34;, &#34;plane_normals&#34;: &#34;estimated&#34;}
+  },
+  &#34;keyframe_consent&#34;: false
+}
+</code></pre>
+<p><strong>Theme package (server → client)</strong></p>
+<pre><code class="language-json">{
+  &#34;schema&#34;: 1,
+  &#34;theme_id&#34;: &#34;th_f12a&#34;,
+  &#34;universe&#34;: &#34;uni_got&#34;, &#34;variant&#34;: &#34;var_harrenhal&#34;, &#34;mode&#34;: &#34;licensed&#34;,
+  &#34;surfaces&#34;: {
+    &#34;wall&#34;: {&#34;albedo&#34;: &#34;wall_a.ktx2&#34;, &#34;normal&#34;: &#34;wall_n.ktx2&#34;, &#34;tile_m&#34;: 1.2},
+    &#34;floor&#34;: {&#34;albedo&#34;: &#34;floor_a.ktx2&#34;, &#34;tile_m&#34;: 0.8}
+  },
+  &#34;props&#34;: [{&#34;match&#34;: &#34;bottle&#34;, &#34;asset&#34;: &#34;goblet_03.glb&#34;, &#34;scale&#34;: 1.0}],
+  &#34;atmosphere&#34;: {&#34;lut&#34;: &#34;grade_ash.cube&#34;, &#34;fog&#34;: 0.25, &#34;particles&#34;: &#34;embers_low&#34;},
+  &#34;audio&#34;: {&#34;ambience&#34;: &#34;hall_wind.ogg&#34;, &#34;gain_db&#34;: -22},
+  &#34;stages&#34;: [&#34;base&#34;, &#34;textures&#34;, &#34;props&#34;],
+  &#34;expires&#34;: &#34;2026-10-08T00:00:00Z&#34;
+}
+</code></pre>
+<h2>8. Timeline of one session</h2>
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>Client</th>
+<th>Server</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T+0</td>
+<td>Camera opens, base look from the bundled pack applies at once</td>
+<td>none</td>
+</tr>
+<tr>
+<td>T+0 to 3 s</td>
+<td>Guided scan, descriptor and clean plate built</td>
+<td>none</td>
+</tr>
+<tr>
+<td>T+3 s</td>
+<td>Descriptor uploaded (async)</td>
+<td>Licensing check, variant selection, planner starts</td>
+</tr>
+<tr>
+<td>T+4.5 s</td>
+<td>Spec received, pooled textures stream in, crossfade over 400 ms</td>
+<td>Generation for pool misses starts</td>
+</tr>
+<tr>
+<td>T+6 to 10 s</td>
+<td>Fresh textures fade in</td>
+<td>Packaging and CDN push</td>
+</tr>
+<tr>
+<td>T+10 to 40 s</td>
+<td>Props appear one by one</td>
+<td>Background hero-prop generation</td>
+</tr>
+<tr>
+<td>Record</td>
+<td>Theme frozen, voice and track mixed, export</td>
+<td>Optional Studio render</td>
+</tr>
+</tbody>
+</table>
+<p>Offline or slow network: the base look stays in place and the bundled default pack is used. The preview is never blocked.</p>
+<h2>9. Privacy and security</h2>
+<ul>
+<li><strong>Data minimization:</strong> the descriptor is numeric and non-identifying. Face landmarks and raw video never leave the device. The keyframe is opt-in, face-excluded, processed in memory and deleted after processing (retention window in the policy).</li>
+<li><strong>Privacy mode:</strong> descriptor-only, with lower personalization, available to every user.</li>
+<li><strong>Consent and compliance:</strong> explicit in-app consent for scene upload, and a privacy policy written for GDPR and India's DPDP Act 2023. Minors need an age gate and verifiable parental consent where the law requires it. Counsel must confirm biometric-law exposure (face landmarks are processed on device only, which should limit it).</li>
+<li><strong>Transport and storage:</strong> TLS, certificate pinning, signed short-lived CDN URLs, encryption at rest, per-user rate limits, and abuse detection on upload endpoints.</li>
+<li><strong>Model and asset integrity:</strong> signed model and theme bundles, with checksum verification before load.</li>
+</ul>
+<h2>10. Rights, licensing and moderation</h2>
+<p>This is the highest non-technical risk and needs counsel and business development from day one.</p>
+<ul>
+<li><strong>Music and dialogue:</strong> licenses from labels, publishers, performing-rights organizations and film/TV rights holders, per territory. The catalog service enforces territory and expiry, with a remote kill switch per track.</li>
+<li><strong>Universe likeness:</strong> recreating a franchise's locations, props and visual identity usually needs the rights holder's approval. Each Universe Pack carries a <code>mode</code>: <strong>licensed</strong> (official style bible, named locations) or <strong>inspired</strong> (generic genre looks such as &quot;dark medieval fortress&quot; with no names, logos or characters).</li>
+<li><strong>Generation guardrails:</strong> prompt sanitizer, negative lists (logos, characters, actors' likenesses), output classifiers for IP leakage and unsafe content, and a human review queue sampling pool entries before they are promoted.</li>
+<li><strong>User content:</strong> classifiers on the keyframe path skip personalization for unsafe scenes. A takedown and reporting flow is required for UGC.</li>
+</ul>
+<h2>11. Quality, testing and observability</h2>
+<ul>
+<li><strong>Device lab:</strong> a matrix across chipsets (Snapdragon, Dimensity, Exynos, Unisoc), RAM (2 to 12 GB) and Android versions, including genuinely cheap phones from week one.</li>
+<li><strong>Golden scene set:</strong> varied rooms, lighting, skin tones, clutter and camera motion, used for mask IoU, flicker score and visual regression runs in CI.</li>
+<li><strong>Runtime metrics:</strong> time to first theme and to final theme, fps p50/p5, dropped frames, thermal throttling events, battery per minute, crash-free rate, cache hit rate, generation cost per session, moderation reject rate, export success rate.</li>
+<li><strong>Experimentation:</strong> remote-config tier tables and A/B tests on variant selection, with guardrails on frame rate and cost.</li>
+</ul>
+<h2>12. Roadmap and team</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Scope</th>
+<th>Exit criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0 · Foundation</strong> (weeks 0 to 6)</td>
+<td>Camera → GL → record, dub engine, licensed audio catalog, person segmentation</td>
+<td>Smooth 1080p recording on 3 reference devices</td>
+</tr>
+<tr>
+<td><strong>P1 · Hand-authored worlds</strong> (weeks 6 to 14)</td>
+<td>Wall/floor segmentation, theme runtime, pooled textures, 3 universe packs, tier L/M, closed beta</td>
+<td>24 fps on a cheap-phone set, beta retention signal</td>
+</tr>
+<tr>
+<td><strong>P2 · AI personalization</strong> (weeks 14 to 26)</td>
+<td>Descriptor, planner, variant selector, generative textures, pools, governor, moderation</td>
+<td>p50 personalized look ≤ 8 s, cost target met</td>
+</tr>
+<tr>
+<td><strong>P3 · Full immersion</strong> (weeks 26 to 40)</td>
+<td>Object swaps, depth/ARCore, 3D props, cue-synced effects, Studio render, scale-out</td>
+<td>Tier H quality bar, 99.5% crash-free</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Core team (~14):</strong> 3 Android/graphics engineers, 2 ML-on-device engineers, 1 audio engineer, 3 backend/infra, 2 ML/generative engineers, 1 technical artist (style bibles, shaders), 1 QA/device-lab, 1 product/design (plus legal and content partnerships as a parallel track).</p>
+<h2>13. Risks and mitigations</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Franchise and music rights block launch</td>
+<td>Start with licensed or original-IP universes, ship <code>inspired</code> mode, build the licensing pipeline early</td>
+</tr>
+<tr>
+<td>Weak phones can't hold frame rate</td>
+<td>Tier L as the baseline, governor, cheap-device testing from day one</td>
+</tr>
+<tr>
+<td>Mask flicker and edge artifacts</td>
+<td>Temporal smoothing, edge-aware upsampling, clean-plate fallback, dedicated tuning sprints</td>
+</tr>
+<tr>
+<td>Generation cost grows with users</td>
+<td>Pooled assets, cache keys, generate-on-miss only, per-tier queues</td>
+</tr>
+<tr>
+<td>Slow or unreliable networks</td>
+<td>Bundled base look, staged streaming, offline default pack</td>
+</tr>
+<tr>
+<td>Privacy backlash</td>
+<td>Descriptor-first design, privacy mode, opt-in keyframe, clear consent copy</td>
+</tr>
+<tr>
+<td>Unsafe or off-brand generations</td>
+<td>Layered moderation, human sampling before pool promotion, per-universe kill switch</td>
+</tr>
+<tr>
+<td>Thermal throttling on long recordings</td>
+<td>Governor, adaptive cadence, battery-aware downgrades</td>
+</tr>
+</tbody>
+</table>
+<h2>14. Open decisions</h2>
+<ol>
+<li>First 3 universes and whether each launches <code>licensed</code> or <code>inspired</code>.</li>
+<li>Keyframe upload: opt-in by default, or descriptor-only until the quality gain is proven in beta.</li>
+<li>On-device vs. self-hosted vs. managed LLM for the Planner (cost and latency trade-off).</li>
+<li>Build vs. buy for face tracking and the 3D renderer (Banuba, DeepAR, Camera Kit vs. in-house).</li>
+<li>Studio render: included in a subscription tier or sold per clip.</li>
+</ol>
+
+</body></html>

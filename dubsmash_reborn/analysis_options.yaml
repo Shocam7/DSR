@@ -1,0 +1,45 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Treat these as errors (not just warnings)
+    missing_required_param: error
+    missing_return: error
+    invalid_annotation_target: ignore
+    must_be_immutable: error
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated/**"
+    - "packages/dsr_engine/lib/src/messages.g.dart"
+    - build/**
+    - android/**
+    - tool/**
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # Style
+    always_declare_return_types: true
+    always_put_required_named_parameters_first: true
+    avoid_dynamic_calls: true
+    avoid_print: true             # Use logger package instead
+    avoid_unnecessary_containers: true
+    avoid_void_async: true
+    cancel_subscriptions: true
+    close_sinks: true
+    directives_ordering: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    sized_box_for_whitespace: true
+    sort_pub_dependencies: true
+    use_super_parameters: true
+    unnecessary_lambdas: true
+    # Performance (important for preview overlay)
+    prefer_const_constructors_in_immutables: true
+    prefer_const_literals_to_create_immutables: true

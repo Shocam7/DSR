@@ -1,0 +1,24 @@
+name: dsr_engine
+description: "DubSmash Reborn native engine plugin. Owns CameraX, EGL/GL render, ML inference, theme runtime, recording, and audio."
+version: 0.0.1
+publish_to: "none"
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.dubsmash.dsr_engine
+        pluginClass: EnginePlugin
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  pigeon: ^22.0.0

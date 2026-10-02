@@ -1,0 +1,58 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.dubsmash.dsr_engine'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 26
+        targetSdk 35
+
+        // 16 KB page-size alignment — required for Play Store (verify current requirements).
+        externalNativeBuild {
+            cmake {
+                cppFlags "-D_FORTIFY_SOURCE=2"
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    // Pack .tflite files without compression to avoid slow/memory-heavy loading.
+    // Reference: Engineering Guide §8 "Model files".
+    androidResources {
+        noCompress += ['.tflite']
+    }
+
+    testOptions {
+        unitTests.all {
+            useJUnitPlatform()
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.3'
+
+    // CameraX (wired in M1)
+    implementation 'androidx.camera:camera-camera2:1.3.4'
+    implementation 'androidx.camera:camera-lifecycle:1.3.4'
+    implementation 'androidx.camera:camera-view:1.3.4'
+
+    // Kotlin Coroutines (for async CameraX / ML work)
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1'
+}

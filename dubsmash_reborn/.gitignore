@@ -1,0 +1,61 @@
+# .gitignore for DubSmash Reborn Flutter project
+
+# Dart / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+pubspec.lock           # commit this in apps (not packages)
+
+# Generated code — regenerate with build_runner
+**/*.g.dart
+**/*.freezed.dart
+lib/app/router.g.dart
+lib/engine/engine_providers.g.dart
+lib/features/record/presentation/record_controller.g.dart
+
+# Pigeon generated — regenerate with pigeon command
+packages/dsr_engine/lib/src/messages.g.dart
+packages/dsr_engine/android/src/main/kotlin/com/dubsmash/dsr_engine/Messages.g.kt
+
+# Android
+android/local.properties
+android/.gradle/
+android/captures/
+android/app/debug.keystore
+android/app/release.keystore
+# google-services.json is NOT committed — injected by CI
+android/app/google-services.json
+android/app/src/dev/google-services.json
+android/app/src/staging/google-services.json
+android/app/src/prod/google-services.json
+
+# Environment / secrets — NEVER commit
+env/staging.json
+env/prod.json
+.env
+*.env.local
+
+# macOS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/settings.json
+.vscode/launch.json
+
+# Test coverage
+coverage/
+
+# Misc
+*.log
+.gemini/
