@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "theme_id": "th_base_look",
+  "universe": "uni_clean",
+  "variant": "var_neutral",
+  "mode": "inspired",
+  "surfaces": {
+    "wall": {
+      "albedo": "textures/wall_neutral_a.ktx2",
+      "tile_m": 1.0
+    },
+    "floor": {
+      "albedo": "textures/floor_neutral_a.ktx2",
+      "tile_m": 1.0
+    }
+  },
+  "props": [],
+  "atmosphere": {
+    "fog": 0.0
+  },
+  "stages": [
+    "base",
+    "textures"
+  ]
+}

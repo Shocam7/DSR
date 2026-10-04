@@ -29,6 +29,7 @@ abstract interface class EngineApi {
   Future<SessionInfo> createSession(SessionConfig config);
   Future<void> startPreview(int sessionId);
   void stopPreview(int sessionId);
+  Future<void> switchCamera(int sessionId);
   void startScan(int sessionId);
   Future<String> finishScan(int sessionId);
   void applyTheme(
@@ -38,7 +39,15 @@ abstract interface class EngineApi {
     int crossfadeMs,
   );
   void setTierOverride(int sessionId, Tier? tier);
+  void setBackgroundEffect(
+    int sessionId, {
+    required bool enabled,
+    required bool useBlur,
+    required int colorArgb,
+    required int blurRadius,
+  });
   Future<void> startRecording(int sessionId, RecordingConfig config);
   Future<RecordingResult> stopRecording(int sessionId);
+  Future<String> exportToGallery(String filePath);
   void disposeSession(int sessionId);
 }

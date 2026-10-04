@@ -1,0 +1,8 @@
+{
+  "flicker_moving_subject": 0.009731950431034482,
+  "iou_scene_01_indoor_bright": 0.9940290178571428,
+  "iou_scene_02_indoor_low_light": 0.9936748496993988,
+  "iou_scene_03_hair_detail": 0.9952368489924104,
+  "iou_scene_04_glasses": 0.9930212765957447,
+  "iou_scene_05_hand_raised": 0.9842749944824543
+}

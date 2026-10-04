@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-10-04T19:46:13.086529",
+  "mode": "verify",
+  "all_passed": true,
+  "results": [
+    {
+      "scene": "scene_01_indoor_bright",
+      "iou": 0.9940290178571428,
+      "precision": 1.0,
+      "recall": 0.9940290178571428
+    },
+    {
+      "scene": "scene_02_indoor_low_light",
+      "iou": 0.9936748496993988,
+      "precision": 1.0,
+      "recall": 0.9936748496993988
+    },
+    {
+      "scene": "scene_03_hair_detail",
+      "iou": 0.9952368489924104,
+      "precision": 1.0,
+      "recall": 0.9952368489924104
+    },
+    {
+      "scene": "scene_04_glasses",
+      "iou": 0.9930212765957447,
+      "precision": 1.0,
+      "recall": 0.9930212765957447
+    },
+    {
+      "scene": "scene_05_hand_raised",
+      "iou": 0.9842749944824543,
+      "precision": 1.0,
+      "recall": 0.9842749944824543
+    },
+    {
+      "clip": "moving_subject",
+      "flicker_score": 0.009731950431034482,
+      "frame_count": 30,
+      "threshold": 0.009731950431034482,
+      "passed": true
+    }
+  ]
+}

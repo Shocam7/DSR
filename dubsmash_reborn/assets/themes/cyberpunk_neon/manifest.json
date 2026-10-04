@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "theme_id": "th_cyberpunk_neon",
+  "universe": "uni_scifi_cyber",
+  "variant": "var_cyber_alley",
+  "mode": "inspired",
+  "surfaces": {
+    "wall": {
+      "albedo": "textures/wall_metal_a.ktx2",
+      "tile_m": 1.5
+    },
+    "floor": {
+      "albedo": "textures/floor_grid_a.ktx2",
+      "tile_m": 1.0
+    }
+  },
+  "props": [
+    {
+      "match": "lamp",
+      "asset": "props/neon_sign.glb",
+      "scale": 1.2
+    }
+  ],
+  "atmosphere": {
+    "fog": 0.15,
+    "particles": "rain_light"
+  },
+  "audio": {
+    "ambience": "audio/cyber_drone.ogg",
+    "gain_db": -18.0
+  },
+  "stages": [
+    "base",
+    "textures",
+    "props"
+  ]
+}

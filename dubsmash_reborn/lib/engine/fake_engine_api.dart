@@ -77,6 +77,11 @@ final class FakeEngineApi implements EngineApi {
   }
 
   @override
+  Future<void> switchCamera(int sessionId) async {
+    callLog.add('switchCamera($sessionId)');
+  }
+
+  @override
   void startScan(int sessionId) {
     callLog.add('startScan($sessionId)');
   }
@@ -103,7 +108,24 @@ final class FakeEngineApi implements EngineApi {
   }
 
   @override
+  void setBackgroundEffect(
+    int sessionId, {
+    required bool enabled,
+    required bool useBlur,
+    required int colorArgb,
+    required int blurRadius,
+  }) {
+    callLog.add(
+      'setBackgroundEffect($sessionId, enabled=$enabled, blur=$useBlur, '
+      'color=$colorArgb, radius=$blurRadius)',
+    );
+  }
+
+  RecordingConfig? lastRecordingConfig;
+
+  @override
   Future<void> startRecording(int sessionId, RecordingConfig config) async {
+    lastRecordingConfig = config;
     callLog.add('startRecording($sessionId, ${config.outputPath})');
   }
 
@@ -115,6 +137,12 @@ final class FakeEngineApi implements EngineApi {
       durationMs: 10000,
       themeId: 'th_fake',
     );
+  }
+
+  @override
+  Future<String> exportToGallery(String filePath) async {
+    callLog.add('exportToGallery($filePath)');
+    return '/storage/emulated/0/DCIM/Dubsmash/DSR_fake.mp4';
   }
 
   @override

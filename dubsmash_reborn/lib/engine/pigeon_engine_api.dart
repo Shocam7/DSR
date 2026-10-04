@@ -37,6 +37,9 @@ final class PigeonEngineApi implements EngineApi {
   void stopPreview(int sessionId) => _host.stopPreview(sessionId);
 
   @override
+  Future<void> switchCamera(int sessionId) => _host.switchCamera(sessionId);
+
+  @override
   void startScan(int sessionId) => _host.startScan(sessionId);
 
   @override
@@ -61,6 +64,22 @@ final class PigeonEngineApi implements EngineApi {
       _host.setTierOverride(sessionId, tier == null ? null : pigeon.Tier.values[tier.index]);
 
   @override
+  void setBackgroundEffect(
+    int sessionId, {
+    required bool enabled,
+    required bool useBlur,
+    required int colorArgb,
+    required int blurRadius,
+  }) =>
+      _host.setBackgroundEffect(
+        sessionId,
+        enabled,
+        useBlur,
+        colorArgb,
+        blurRadius,
+      );
+
+  @override
   Future<void> startRecording(int sessionId, RecordingConfig config) =>
       _host.startRecording(
         sessionId,
@@ -70,6 +89,7 @@ final class PigeonEngineApi implements EngineApi {
           height: config.height,
           videoBitrateBps: config.videoBitrateBps,
           audioOffsetMs: config.audioOffsetMs,
+          audioTrackPath: config.audioTrackPath,
         ),
       );
 
@@ -82,6 +102,10 @@ final class PigeonEngineApi implements EngineApi {
       themeId: result.themeId,
     );
   }
+
+  @override
+  Future<String> exportToGallery(String filePath) =>
+      _host.exportToGallery(filePath);
 
   @override
   void disposeSession(int sessionId) => _host.disposeSession(sessionId);

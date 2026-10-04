@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "tiers": {
+    "L": {
+      "scene_seg_resolution": 160,
+      "scene_seg_cadence": 4,
+      "object_swap_enabled": false,
+      "max_props": 0,
+      "depth_enabled": false,
+      "theme_texture_max_size": 512,
+      "max_theme_memory_mb": 8,
+      "allow_normal_maps": false,
+      "particles_level": "minimal"
+    },
+    "M": {
+      "scene_seg_resolution": 256,
+      "scene_seg_cadence": 3,
+      "object_swap_enabled": true,
+      "max_props": 3,
+      "depth_enabled": false,
+      "theme_texture_max_size": 1024,
+      "max_theme_memory_mb": 16,
+      "allow_normal_maps": false,
+      "particles_level": "moderate"
+    },
+    "H": {
+      "scene_seg_resolution": 320,
+      "scene_seg_cadence": 2,
+      "object_swap_enabled": true,
+      "max_props": 8,
+      "depth_enabled": true,
+      "theme_texture_max_size": 1024,
+      "max_theme_memory_mb": 25,
+      "allow_normal_maps": true,
+      "particles_level": "full"
+    }
+  },
+  "device_rules": [
+    {
+      "comment": "Reference Tier L devices",
+      "patterns": ["Redmi 9A", "SM-A032F", "moto e20", "CPH2185", "CPH2179"],
+      "tier": "L"
+    },
+    {
+      "comment": "Reference Tier M devices",
+      "patterns": ["SM-M315F", "Pixel 4a", "Redmi Note 10", "SM-A525F", "CPH2219"],
+      "tier": "M"
+    },
+    {
+      "comment": "Reference Tier H devices",
+      "patterns": ["Pixel 7", "Pixel 8", "Pixel 9", "SM-S901B", "SM-S918B", "SM-S928B"],
+      "tier": "H"
+    }
+  ],
+  "ram_thresholds_mb": {
+    "tier_l_max": 3072,
+    "tier_m_max": 6144
+  },
+  "default_tier": "M"
+}

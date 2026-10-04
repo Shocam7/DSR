@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "theme_id": "th_medieval_stone",
+  "universe": "uni_dark_medieval",
+  "variant": "var_ruined_keep",
+  "mode": "inspired",
+  "surfaces": {
+    "wall": {
+      "albedo": "textures/wall_stone_a.ktx2",
+      "tile_m": 1.2
+    },
+    "floor": {
+      "albedo": "textures/floor_cobble_a.ktx2",
+      "tile_m": 0.8
+    }
+  },
+  "props": [
+    {
+      "match": "bottle",
+      "asset": "props/goblet_03.glb",
+      "scale": 1.0
+    }
+  ],
+  "atmosphere": {
+    "fog": 0.25,
+    "particles": "embers_low"
+  },
+  "audio": {
+    "ambience": "audio/hall_wind.ogg",
+    "gain_db": -22.0
+  },
+  "stages": [
+    "base",
+    "textures",
+    "props"
+  ]
+}

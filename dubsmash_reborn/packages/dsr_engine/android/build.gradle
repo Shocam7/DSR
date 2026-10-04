@@ -36,8 +36,9 @@ android {
 
     testOptions {
         unitTests.all {
-            useJUnitPlatform()
+            // Support both JUnit4 and JUnit5 test runners
         }
+        unitTests.returnDefaultValues = true
     }
 }
 
@@ -54,5 +55,11 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1'
+
+    // M3: MediaPipe Tasks Vision (on-device person segmentation).
+    // Decision D007/D014: stock TFLite cannot run the selfie model (custom op
+    // Convolution2DTransposeBias); MediaPipe Tasks bundles the op + TFLite runtime.
+    implementation 'com.google.mediapipe:tasks-vision:0.10.20'
 }

@@ -112,7 +112,7 @@ dependencies {
 }
 
 afterEvaluate {
-    tasks.matching { it.name.contains("Dev") && it.name.contains("GoogleServices") }.configureEach {
+    tasks.matching { it.name.contains("Dev") && (it.name.contains("GoogleServices") || it.name.contains("Crashlytics")) }.configureEach {
         enabled = false
     }
 }

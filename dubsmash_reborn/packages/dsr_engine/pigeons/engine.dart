@@ -98,6 +98,7 @@ class RecordingConfig {
     required this.height,
     required this.videoBitrateBps,
     required this.audioOffsetMs,
+    this.audioTrackPath,
   });
 
   final String outputPath;
@@ -107,6 +108,9 @@ class RecordingConfig {
 
   /// Device-specific A/V offset measured by the latency calibration screen.
   final int audioOffsetMs;
+
+  /// Optional background audio track file path to play and mix during recording.
+  final String? audioTrackPath;
 }
 
 /// Returned by [EngineHostApi.stopRecording].
@@ -181,6 +185,10 @@ abstract class EngineHostApi {
   /// Stops the render loop and releases the camera. Does not destroy GL context.
   void stopPreview(int sessionId);
 
+  /// Toggles between front and back camera.
+  @async
+  void switchCamera(int sessionId);
+
   /// Begins the 2–3 s guided room scan. Progress emitted via [EngineFlutterApi.onEvent].
   void startScan(int sessionId);
 
@@ -201,6 +209,17 @@ abstract class EngineHostApi {
   /// Debug / A/B: override the device tier. Pass null to revert to auto.
   void setTierOverride(int sessionId, Tier? tier);
 
+  /// M3: Person-segmentation background effect.
+  /// [enabled] turns compositing on/off; [useBlur] selects blur vs solid color;
+  /// [colorArgb] is the solid color (0xAARRGGBB); [blurRadius] is 1..8.
+  void setBackgroundEffect(
+    int sessionId,
+    bool enabled,
+    bool useBlur,
+    int colorArgb,
+    int blurRadius,
+  );
+
   /// Starts encoding to [config.outputPath]. Freezes the current theme.
   @async
   void startRecording(int sessionId, RecordingConfig config);
@@ -208,6 +227,11 @@ abstract class EngineHostApi {
   /// Stops encoding and muxes audio+video. Returns the file path and duration.
   @async
   RecordingResult stopRecording(int sessionId);
+
+  /// Exports a recorded video file to the device's public media gallery (DCIM/Dubsmash)
+  /// and notifies Android MediaStore so it appears immediately in Photos/Gallery.
+  @async
+  String exportToGallery(String filePath);
 
   /// Must release camera, GL context, codecs, and models within 500 ms.
   void disposeSession(int sessionId);
